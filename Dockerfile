@@ -21,14 +21,36 @@
 #            docker images day12-agent:prod     # xem dung lượng
 # ═══════════════════════════════════════════════════════════════════
 
-FROM python:3.11
+# Stage 1: Builder — cài đặt thư viện vào /install
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --default-timeout=120 --retries 10 --prefix=/install -r requirements.txt
+
+# Stage 2: Runtime — image nhẹ, chỉ chứa thư viện đã cài và source code cần thiết
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY . .
+# Copy thư viện đã cài từ stage builder sang
+COPY --from=builder /install /usr/local
 
-RUN pip install -r requirements.txt
+# Copy source code SAU khi cài thư viện để tận dụng Docker layer cache
+COPY app ./app
+COPY utils ./utils
+
+# Tạo user thường (non-root) và chuyển quyền thực thi
+RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import os, urllib.request; port = os.getenv('PORT', '8000'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health').read()" || exit 1
+
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
