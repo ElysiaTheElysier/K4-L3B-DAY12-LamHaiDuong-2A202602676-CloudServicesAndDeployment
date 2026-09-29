@@ -3,7 +3,7 @@
 > **Bài làm cá nhân.** Trả lời bằng lời của chính bạn, dựa trên những gì bạn
 > quan sát được khi chạy code — không sao chép đáp án của người khác.
 >
-> Cách trả lời: thay dòng `> *Câu trả lời của bạn*` bằng câu trả lời.
+> Cách trả lời: viết câu trả lời chi tiết bên dưới mỗi câu hỏi.
 > `grade.py` đếm số câu đã trả lời (15 điểm cho 10 câu).
 >
 > Họ và tên: Lâm Hải Dương  Mã học viên: 2A202602676
